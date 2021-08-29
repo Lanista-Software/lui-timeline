@@ -1,26 +1,54 @@
 <template>
   <img alt="Vue logo" src="./assets/logo.png" />
-  <HelloWorld msg="Welcome to Your Vue.js App" />
+  <div style="overflow: hidden; position: absolute; width: 100%; height: 100%">
+    <LuiTimeline @timeline-position="position($event)" />
+    <!-- <LuiTimeline
+      :el="config.el"
+      :timelineDuration="config.timelineDuration"
+      :lineWidth="config.lineWidth"
+      :shortLineColor="config.shortLineColor"
+      :longLineColor="config.longLineColor"
+      :textFillColor="config.textFillColor"
+      :offsetLeft="config.offsetLeft"
+      :height="config.height"
+    /> -->
+  </div>
 </template>
 
 <script>
-import HelloWorld from "./components/HelloWorld.vue";
+import LuiTimeline from "./components/LuiTimeline.vue";
 
 export default {
   name: "App",
   components: {
-    HelloWorld,
+    LuiTimeline,
+  },
+  data() {
+    return {
+      config: {
+        el: "lui-timeline",
+        timelineDuration: null,
+        lineWidth: null,
+        shortLineColor: null,
+        longLineColor: null,
+        textFillColor: null,
+        offsetLeft: null,
+        height: null,
+      },
+    };
+  },
+  methods: {
+    position(e) {
+      console.log(e);
+    },
   },
 };
 </script>
 
 <style lang="scss">
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 </style>
