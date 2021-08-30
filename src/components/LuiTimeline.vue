@@ -28,7 +28,7 @@ export default {
     },
     offsetLeft: {
       type: Number,
-      default: 0,
+      default: 100,
     },
     height: {
       type: Number,
@@ -39,18 +39,30 @@ export default {
     this.startTime = 0;
     if (this.$refs[this.el]) {
       // this.width = window.innerWidth * 6; // Watcher created Canvas.
-      this.width = 6000;
+      if (
+        this.timelineDuration !== null &&
+        this.timelineDuration <= this.width
+      ) {
+        this.width = this.timelineDuration;
+      } else {
+        this.width = 6000;
+      }
       this.reRenderX = 2000;
       this.createCanvas();
     }
-    window.addEventListener("resize", (e) => this.resize(e));
+    // window.addEventListener("resize", (e) => this.resize(e)); Resize event ?????
     document.addEventListener("mouseup", () => this.mouseUp());
     document.addEventListener("mousemove", (e) => this.mouseMove(e));
+  },
+  beforeUnmount() {
+    document.removeEventListener("mouseup", null);
+    document.removeEventListener("mousemove", null);
+    this.canvas.removeEventListener("mousedown", null);
   },
   data() {
     return {
       canvas: null,
-      width: 0,
+      width: 6000,
       ctx: null,
       reRenderX: null,
       elmLeft: null,
@@ -60,6 +72,7 @@ export default {
       startTime: null,
       renderedSize: null,
       timelinePosition: null,
+      timelineProgression: null,
     };
   },
   watch: {
@@ -85,9 +98,6 @@ export default {
     },
   },
   methods: {
-    toPx(val) {
-      return `${val}px`;
-    },
     createCanvas() {
       this.canvas = this.$refs[this.el];
       this.ctx = this.canvas.getContext("2d");
@@ -95,6 +105,7 @@ export default {
       this.canvas.height = this.height;
       this.drawLineToCanvas();
       this.fillTextToCanvas(this.startTime);
+      this.renderedSize = this.width;
     },
     // resize(e) {
     //   this.width = e.target.innerWidth * 6;
@@ -125,10 +136,10 @@ export default {
       }
     },
     fillTextToCanvas(startTime) {
-      console.log("çalıştı");
       // const duration = this.config.timelineDuration || startTime + 1;
       this.ctx.clearRect(0, 0, this.width, 51);
       this.ctx.beginPath();
+
       for (let index = 0; index <= this.width; index++) {
         if (index % 100 === 0) {
           this.ctx.font = "12px Arial";
@@ -146,8 +157,6 @@ export default {
       this.diffX = mouseX - this.elmLeft;
     },
     mouseMove(e) {
-      // this.offsetLeft = this.config.offsetLeft || 0;
-      // let duration = this.config.timelineDuration || 0;
       if (e.movementX != 0) {
         if (!this.isMouseDown) {
           return;
@@ -160,32 +169,81 @@ export default {
         if (this.newElmLeft > this.offsetLeft) {
           this.newElmLeft = this.offsetLeft;
         }
+        if (Math.abs(this.newElmLeft) > this.offsetLeft + this.width) {
+          this.newElmLeft = this.offsetLeft + this.width * -1;
+        }
+        // this.timelineProgression += Math.abs(this.newElmLeft - this.offsetLeft);
+        console.log(this.timelineProgression);
         this.alignTimeline();
         this.timelinePosition = Math.abs(this.newElmLeft - this.offsetLeft);
-        console.log(this.timelinePosition);
       }
     },
     mouseUp() {
       this.isMouseDown = false;
-      if (this.width - this.timelinePosition <= this.reRenderX) {
+
+      if (
+        this.timelineDuration === null ||
+        this.width < this.timelineDuration
+      ) {
+        if (
+          this.width - this.timelinePosition <= this.reRenderX &&
+          this.timelineDuration != this.renderedSize
+        ) {
+          console.log("Right rerender");
+          if (
+            this.timelineDuration != null &&
+            this.renderedSize + this.reRenderX > this.timelineDuration
+          ) {
+            //Bug fix
+            this.startTime = this.timelineDuration - this.width;
+            let rX = this.timelineDuration - this.renderedSize;
+            this.fillTextToCanvas(this.startTime);
+            this.renderedSize = this.timelineDuration;
+            // console.log(rX, "T");
+            this.newElmLeft = this.newElmLeft + rX;
+          } else {
+            this.startTime += this.reRenderX;
+            this.renderedSize += this.reRenderX;
+            this.fillTextToCanvas(this.startTime);
+            this.newElmLeft = this.newElmLeft + this.reRenderX;
+            this.alignTimeline();
+          }
+        }
+      } else if (
+        this.timelineDuration === null &&
+        this.width - this.timelinePosition <= this.reRenderX
+      ) {
         this.startTime += this.reRenderX;
         this.renderedSize += this.reRenderX;
         this.fillTextToCanvas(this.startTime);
         this.newElmLeft = this.newElmLeft + this.reRenderX;
         this.alignTimeline();
       }
-      if (this.startTime != 0 && this.timelinePosition <= this.reRenderX) {
+      if (
+        this.startTime - this.reRenderX >= 0 &&
+        this.timelinePosition <= this.reRenderX
+      ) {
+        console.log("Left rerender", this.startTime);
         this.startTime -= this.reRenderX;
         this.renderedSize -= this.reRenderX;
-
         this.fillTextToCanvas(this.startTime);
         this.newElmLeft = this.newElmLeft - this.reRenderX;
-
-        this.alignTimeline();
+        this.alignTimeline(this.newElmLeft);
       }
+      // console.log({
+      //   rX: this.reRenderX,
+      //   rS: this.renderedSize,
+      //   tP: this.timelinePosition,
+      //   tD: this.timelineDuration,
+      //   sT: this.startTime,
+      //   nE: this.newElmLeft,
+      // });
     },
     alignTimeline() {
       this.ctx.canvas.style.left = this.toPx(this.newElmLeft);
+    },
+    toPx(val) {
+      return `${val}px`;
     },
   },
 };
