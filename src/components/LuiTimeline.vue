@@ -34,23 +34,25 @@ export default {
       type: Number,
       default: 100,
     },
+    setPosition: {
+      type: Number,
+      default: null,
+    },
   },
   mounted() {
     this.startTime = 0;
     if (this.$refs[this.el]) {
-      // this.width = window.innerWidth * 6; // Watcher created Canvas.
       if (
-        this.timelineDuration !== null &&
-        this.timelineDuration <= this.width
+        this.computedDuration !== null &&
+        this.computedDuration <= this.width
       ) {
-        this.width = this.timelineDuration;
+        this.width = this.computedDuration;
       } else {
         this.width = 6000;
       }
       this.reRenderX = 2000;
       this.createCanvas();
     }
-    // window.addEventListener("resize", (e) => this.resize(e)); Resize event ?????
     document.addEventListener("mouseup", () => this.mouseUp());
     document.addEventListener("mousemove", (e) => this.mouseMove(e));
   },
@@ -76,17 +78,16 @@ export default {
     };
   },
   watch: {
-    // width(to, from) {
-    //   if (to > 6000) {
-    //     this.width = 6000;
-    //   }
-    //   this.reRenderX = 2000;
-    //   if (to !== from) {
-    //     this.createCanvas();
-    //   }
-    // },
     timelinePosition(to) {
       this.$emit("timelinePosition", to);
+    },
+    timelineProgression(to) {
+      this.$emit("timelineProgression", to);
+    },
+    setPosition(to) {
+      console.log(to, "second");
+      this.newElmLeft = to * 100 * -1;
+      this.alignTimeline();
     },
   },
   computed: {
@@ -95,6 +96,11 @@ export default {
         left: this.toPx(this.offsetLeft),
       };
       return styles;
+    },
+    computedDuration() {
+      return this.timelineDuration === null
+        ? null
+        : this.timelineDuration * 100;
     },
   },
   methods: {
@@ -107,9 +113,6 @@ export default {
       this.fillTextToCanvas(this.startTime);
       this.renderedSize = this.width;
     },
-    // resize(e) {
-    //   this.width = e.target.innerWidth * 6;
-    // },
     drawLineToCanvas() {
       for (let index = 0; index <= this.width; index++) {
         if (index % 100 === 0) {
@@ -136,17 +139,19 @@ export default {
       }
     },
     fillTextToCanvas(startTime) {
-      // const duration = this.config.timelineDuration || startTime + 1;
       this.ctx.clearRect(0, 0, this.width, 51);
       this.ctx.beginPath();
-
       for (let index = 0; index <= this.width; index++) {
         if (index % 100 === 0) {
           this.ctx.font = "12px Arial";
           // this.ctx.fillStyle = this.textFillColor;
-          this.ctx.strokeStyle = this.textFillColor;
-
-          this.ctx.strokeText(index + startTime, index, 50);
+          this.ctx.fillStyle = this.textFillColor;
+          let txt = (index + startTime) * 10;
+          this.ctx.fillText(
+            `${new Date(txt).toISOString().substr(11, 8)}`,
+            index,
+            50
+          );
         }
       }
     },
@@ -172,35 +177,36 @@ export default {
         if (Math.abs(this.newElmLeft) > this.offsetLeft + this.width) {
           this.newElmLeft = this.offsetLeft + this.width * -1;
         }
-        // this.timelineProgression += Math.abs(this.newElmLeft - this.offsetLeft);
-        console.log(this.timelineProgression);
         this.alignTimeline();
         this.timelinePosition = Math.abs(this.newElmLeft - this.offsetLeft);
+        this.timelineProgression -= e.movementX;
       }
     },
     mouseUp() {
       this.isMouseDown = false;
 
       if (
-        this.timelineDuration === null ||
-        this.width < this.timelineDuration
+        this.computedDuration === null ||
+        this.width < this.computedDuration
       ) {
         if (
           this.width - this.timelinePosition <= this.reRenderX &&
-          this.timelineDuration != this.renderedSize
+          this.computedDuration != this.renderedSize
         ) {
           console.log("Right rerender");
           if (
-            this.timelineDuration != null &&
-            this.renderedSize + this.reRenderX > this.timelineDuration
+            this.computedDuration != null &&
+            this.renderedSize + this.reRenderX > this.computedDuration
           ) {
             //Bug fix
-            this.startTime = this.timelineDuration - this.width;
-            let rX = this.timelineDuration - this.renderedSize;
+            this.startTime = this.computedDuration - this.width;
+            let rX = this.computedDuration - this.renderedSize;
+            this.reRenderX = rX;
             this.fillTextToCanvas(this.startTime);
-            this.renderedSize = this.timelineDuration;
+            this.drawLineToCanvas();
+            this.renderedSize = this.computedDuration;
             // console.log(rX, "T");
-            this.newElmLeft = this.newElmLeft + rX;
+            this.newElmLeft = this.newElmLeft + this.reRenderX;
           } else {
             this.startTime += this.reRenderX;
             this.renderedSize += this.reRenderX;
@@ -210,7 +216,7 @@ export default {
           }
         }
       } else if (
-        this.timelineDuration === null &&
+        this.computedDuration === null &&
         this.width - this.timelinePosition <= this.reRenderX
       ) {
         this.startTime += this.reRenderX;
@@ -229,17 +235,11 @@ export default {
         this.fillTextToCanvas(this.startTime);
         this.newElmLeft = this.newElmLeft - this.reRenderX;
         this.alignTimeline(this.newElmLeft);
+        this.reRenderX = 2000;
       }
-      // console.log({
-      //   rX: this.reRenderX,
-      //   rS: this.renderedSize,
-      //   tP: this.timelinePosition,
-      //   tD: this.timelineDuration,
-      //   sT: this.startTime,
-      //   nE: this.newElmLeft,
-      // });
     },
     alignTimeline() {
+      console.log("Çalıştı.", this.newElmLeft);
       this.ctx.canvas.style.left = this.toPx(this.newElmLeft);
     },
     toPx(val) {

@@ -1,10 +1,14 @@
 <template>
   <img alt="Vue logo" src="./assets/logo.png" />
+  <br />
+  <input type="number" v-model="setTPosition" />
   <div style="overflow: hidden; position: absolute; width: 100%; height: 100px">
     <LuiTimeline
-      :timelineDuration="7525"
-      @timeline-position="position($event)"
+      :timelineDuration="6000"
+      @timeline-progression="position($event)"
+      :setPosition="setTPosition"
     />
+    {{ new Date(6000 * 100).toISOString().substr(11, 8) }}
     <!-- <LuiTimeline
       :el="config.el"
       :timelineDuration="config.timelineDuration"
@@ -16,6 +20,7 @@
       :height="config.height"
     /> -->
   </div>
+
   <div
     style="
       overflow: hidden;
@@ -25,7 +30,7 @@
       top: 320px;
     "
   >
-    <LuiTimeline :el="'tesst'" @timeline-position="position($event)" />
+    <LuiTimeline :el="'tesst'" />
     <!-- <LuiTimeline
       :el="config.el"
       :timelineDuration="config.timelineDuration"
@@ -59,12 +64,12 @@ export default {
         offsetLeft: null,
         height: null,
       },
+      setTPosition: null,
     };
   },
   methods: {
     position(e) {
-      // Position geliyor.
-      return e;
+      console.log(e);
     },
   },
 };
