@@ -1,0 +1,22 @@
+{
+  "name": "lui-timeline",
+  "version": "0.1.1",
+  "description": "Lui Dynamic draggable Timeline component.",
+  "main": "./dist/assets/lui-timeline.js",
+  "private": false,
+  
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.2.6"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^1.6.0",
+    "@vue/compiler-sfc": "^3.2.6",
+    "vite": "^2.5.2"
+  },
+  "files": ["dist"]
+}
